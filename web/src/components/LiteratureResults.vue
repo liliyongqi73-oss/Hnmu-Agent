@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 
 /**
  * 功能：展示检索阶段返回的文献与来源错误。
@@ -16,6 +16,12 @@ const props = defineProps({
 
 const literature = computed(() => props.sources.filter((item) => !item.error));
 const errors = computed(() => props.sources.filter((item) => item.error));
+const currentPage = ref(1);
+const PAGE_SIZE = 10;
+const pagedLiterature = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE;
+  return literature.value.slice(start, start + PAGE_SIZE);
+});
 const totalHits = computed(() => {
   const totals = new Map();
   literature.value.forEach((item) => {
@@ -42,6 +48,26 @@ function sourceUrl(item) {
   }
   return "";
 }
+
+/**
+ * 功能：生成文献标识，优先显示 PMID、DOI，再回退到来源编号。
+ * 参数：item - 单条文献结果。
+ * 返回值：适合表格展示的文献标识。
+ */
+function literatureIdentifier(item) {
+  if (item.pmid) {
+    return `PMID: ${item.pmid}`;
+  }
+  if (item.doi) {
+    return `DOI: ${item.doi}`;
+  }
+  return item.id || "-";
+}
+
+// 检索结果变化后回到第一页，避免页码超出新结果范围。
+watch(() => props.sources, () => {
+  currentPage.value = 1;
+}, { deep: true });
 </script>
 
 <template>
@@ -60,21 +86,49 @@ function sourceUrl(item) {
       show-icon
     />
 
-    <article v-for="(item, index) in literature" :key="item.pmid || item.id || item.url || index" class="literature-item">
-      <div class="literature-item__meta">
-        <el-tag effect="plain" size="small">{{ item.source }}</el-tag>
-        <span v-if="item.venue">{{ item.venue }}</span>
-        <span v-if="item.year">{{ item.year }}</span>
-        <span v-if="item.pmid">PMID: {{ item.pmid }}</span>
-        <span v-if="item.doi">DOI: {{ item.doi }}</span>
-        <span v-if="item.id">{{ item.id }}</span>
-      </div>
-      <a v-if="sourceUrl(item)" :href="sourceUrl(item)" rel="noopener noreferrer" target="_blank">
-        {{ item.title || "未命名文献" }}
-      </a>
-      <strong v-else>{{ item.title || "未命名文献" }}</strong>
-      <p v-if="item.abstract">{{ item.abstract }}</p>
-    </article>
+    <el-table v-if="literature.length" :data="pagedLiterature" border stripe table-layout="fixed">
+      <el-table-column type="expand">
+        <template #default="{ row }">
+          <div class="literature-abstract">
+            <strong>摘要</strong>
+            <p>{{ row.abstract || "该来源未提供摘要。" }}</p>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="序号" width="70">
+        <template #default="{ $index }">{{ (currentPage - 1) * PAGE_SIZE + $index + 1 }}</template>
+      </el-table-column>
+      <el-table-column label="来源" prop="source" width="90" />
+      <el-table-column label="会议 / 期刊" prop="venue" width="140" show-overflow-tooltip />
+      <el-table-column label="年份" prop="year" width="80" />
+      <el-table-column label="文献标题" min-width="360">
+        <template #default="{ row }">
+          <a v-if="sourceUrl(row)" :href="sourceUrl(row)" rel="noopener noreferrer" target="_blank">
+            {{ row.title || "未命名文献" }}
+          </a>
+          <strong v-else>{{ row.title || "未命名文献" }}</strong>
+        </template>
+      </el-table-column>
+      <el-table-column label="文献标识" width="250" show-overflow-tooltip>
+        <template #default="{ row }">{{ literatureIdentifier(row) }}</template>
+      </el-table-column>
+      <el-table-column label="操作" width="90" fixed="right">
+        <template #default="{ row }">
+          <el-link v-if="sourceUrl(row)" :href="sourceUrl(row)" target="_blank" type="primary">查看</el-link>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <el-pagination
+      v-if="literature.length > PAGE_SIZE"
+      v-model:current-page="currentPage"
+      :page-size="PAGE_SIZE"
+      :total="literature.length"
+      background
+      class="literature-pagination"
+      layout="total, prev, pager, next, jumper"
+    />
 
     <el-alert
       v-for="(item, index) in errors"
@@ -95,8 +149,7 @@ function sourceUrl(item) {
   border-top: 1px dashed var(--el-border-color-lighter);
 }
 
-.literature-results__header,
-.literature-item__meta {
+.literature-results__header {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -112,29 +165,28 @@ function sourceUrl(item) {
   font-size: 12px;
 }
 
-.literature-item {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.literature-item__meta {
-  margin-bottom: 6px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.literature-item a,
-.literature-item strong {
+.literature-results :deep(.el-table a),
+.literature-results :deep(.el-table strong) {
   color: var(--el-color-primary);
   font-weight: 600;
   line-height: 1.5;
 }
 
-.literature-item p {
-  margin: 7px 0 0;
+.literature-abstract {
+  padding: 4px 48px;
+}
+
+.literature-abstract p {
+  margin: 8px 0 0;
   color: var(--el-text-color-regular);
   font-size: 13px;
   line-height: 1.65;
+}
+
+.literature-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
 }
 
 .literature-results__error {
