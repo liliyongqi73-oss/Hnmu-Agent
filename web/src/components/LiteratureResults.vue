@@ -16,6 +16,17 @@ const props = defineProps({
 
 const literature = computed(() => props.sources.filter((item) => !item.error));
 const errors = computed(() => props.sources.filter((item) => item.error));
+const totalHits = computed(() => {
+  const totals = new Map();
+  literature.value.forEach((item) => {
+    if (!item.total_hits) {
+      return;
+    }
+    const key = item.source === "DBLP" ? `${item.source}:${item.venue || "全库"}` : item.source;
+    totals.set(key, Number(item.total_hits));
+  });
+  return [...totals.values()].reduce((sum, count) => sum + count, 0);
+});
 
 /**
  * 功能：生成文献详情链接。
@@ -38,6 +49,7 @@ function sourceUrl(item) {
     <div class="literature-results__header">
       <strong>检索文献</strong>
       <el-tag effect="plain" size="small">{{ literature.length }} 篇</el-tag>
+      <span v-if="totalHits" class="literature-results__total">数据库总命中约 {{ totalHits }} 篇，当前展示 {{ literature.length }} 篇</span>
     </div>
 
     <el-alert
@@ -93,6 +105,11 @@ function sourceUrl(item) {
 
 .literature-results__header {
   margin-bottom: 10px;
+}
+
+.literature-results__total {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
 .literature-item {

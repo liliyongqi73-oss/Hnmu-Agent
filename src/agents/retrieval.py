@@ -76,9 +76,17 @@ def retrieve(
             [],
         )
     if "pubmed" in selected:
-        external += _safe_call("PubMed", lambda: search_pubmed(topic, k=k, journals=journals), [])
+        external += _safe_call(
+            "PubMed",
+            lambda: search_pubmed(topic, k=k, journals=journals, year_from=year_from, year_to=year_to),
+            [],
+        )
     if "arxiv" in selected:
-        external += _safe_call("arXiv", lambda: search_arxiv(topic, k=k, categories=categories), [])
+        external += _safe_call(
+            "arXiv",
+            lambda: search_arxiv(topic, k=k, categories=categories, year_from=year_from, year_to=year_to),
+            [],
+        )
     local = _safe_call("院内库", lambda: vectorstore.query(topic, k=k), []) if "local" in selected else []
     if year_from or year_to:
         external = [

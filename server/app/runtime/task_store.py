@@ -82,6 +82,7 @@ def create_task(request: TaskCreateRequest) -> TaskRecord:
         conferences=request.conferences,
         year_from=request.year_from,
         year_to=request.year_to,
+        max_results=request.max_results,
         agents=request.agents,
         has_reference=bool(request.reference),
         reference=request.reference,

@@ -301,6 +301,7 @@ def _run_current_step(task_id: str) -> None:
                 "conferences": record.conferences,
                 "year_from": record.year_from,
                 "year_to": record.year_to,
+                "max_results": record.max_results,
             },
             on_stream=on_stream,
             reference=record.reference,

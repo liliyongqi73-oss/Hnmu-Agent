@@ -18,6 +18,7 @@ const journals = ref([]);
 const arxivCategories = ref([]);
 const databases = ref(["dblp", "pubmed", "arxiv"]);
 const conferences = ref(["CVPR", "AAAI", "ICML", "ICLR"]);
+const maxResults = ref(30);
 
 // 仅科研协作、文献精读与完整论文 pipeline 会触发文献检索，教学备课无需选择来源。
 const showSources = computed(() => ["research", "literature", "paper"].includes(mode.value));
@@ -39,6 +40,7 @@ function submit() {
     arxiv_categories: showSources.value ? arxivCategories.value : [],
     databases: showSources.value ? databases.value : [],
     conferences: showSources.value && databases.value.includes("dblp") ? conferences.value : [],
+    max_results: maxResults.value,
   });
 }
 
@@ -80,6 +82,7 @@ defineExpose({ submitQuick });
       >
         <el-option v-for="item in sources.conferences" :key="item.id" :label="item.name" :value="item.id" />
       </el-select>
+      <el-input-number v-model="maxResults" :max="100" :min="5" :step="5" />
       <el-select
         v-if="databases.includes('pubmed')"
         v-model="journals"

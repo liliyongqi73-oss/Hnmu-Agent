@@ -64,6 +64,7 @@ class TaskCreateRequest(BaseModel):
     conferences: list[str] = Field(default_factory=list)
     year_from: int | None = Field(default=None, ge=1900, le=2100)
     year_to: int | None = Field(default=None, ge=1900, le=2100)
+    max_results: int = Field(default=30, ge=5, le=100)
     # 自选 agent 子集（按顺序执行）；为空时按 mode 走预置计划。
     agents: list[str] = Field(default_factory=list)
     # 上传文件解析出的参考上下文，注入每个 agent。
@@ -118,6 +119,7 @@ class TaskRecord(BaseModel):
     conferences: list[str] = Field(default_factory=list)
     year_from: int | None = None
     year_to: int | None = None
+    max_results: int = 30
     agents: list[str] = Field(default_factory=list)
     has_reference: bool = False
     reference: str = ""

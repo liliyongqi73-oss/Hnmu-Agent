@@ -132,6 +132,7 @@ def _run_retrieval_step(
         conferences=filters.get("conferences") or None,
         year_from=filters.get("year_from"),
         year_to=filters.get("year_to"),
+        k=int(filters.get("max_results") or 30),
     )
     summary = _retrieval_summary(filters, retrieved)
     emit(step.stage, "检索 Agent", "completed", summary)
@@ -162,6 +163,16 @@ def _retrieval_summary(filters: dict, retrieved: dict) -> str:
     external = retrieved.get("external", [])
     hit_count = len([item for item in external if not item.get("error")]) + len(retrieved.get("local", []))
     errors = [f"{item.get('source', '未知来源')}：{item['error']}" for item in external if item.get("error")]
+    total_keys: set[str] = set()
+    total_hits = 0
+    for item in external:
+        if not item.get("total_hits"):
+            continue
+        total_key = f"{item.get('source')}:{item.get('venue')}" if item.get("source") == "DBLP" else str(item.get("source"))
+        if total_key in total_keys:
+            continue
+        total_keys.add(total_key)
+        total_hits += int(item["total_hits"])
     parts: list[str] = []
     if filters.get("journals"):
         parts.append("期刊 " + "、".join(filters["journals"]))
@@ -173,12 +184,15 @@ def _retrieval_summary(filters: dict, retrieved: dict) -> str:
         parts.append("会议 " + "、".join(filters["conferences"]))
     if filters.get("year_from") or filters.get("year_to"):
         parts.append(f"年份 {filters.get('year_from') or '不限'}-{filters.get('year_to') or '不限'}")
+    if filters.get("max_results"):
+        parts.append(f"每来源最多展示 {filters['max_results']} 篇")
     scope = "；限定来源：" + "；".join(parts) if parts else ""
     if hit_count == 0:
         reason = "；".join(errors) if errors else "检索词或来源限制下无命中"
         return f"未获得可用文献：{reason}{scope}"
     warning = f"；部分来源异常：{'；'.join(errors)}" if errors else ""
-    return f"检索到 {hit_count} 篇可用文献{scope}{warning}"
+    total_summary = f"，数据库总命中约 {total_hits} 篇" if total_hits else ""
+    return f"当前展示 {hit_count} 篇可用文献{total_summary}{scope}{warning}"
 
 
 def _generate(

@@ -35,6 +35,7 @@ const arxivCategories = ref([]);
 const databases = ref(["dblp", "pubmed", "arxiv"]);
 const conferences = ref(["CVPR", "AAAI", "ICML", "ICLR"]);
 const yearRange = ref(["2023", "2026"]);
+const maxResults = ref(30);
 const reference = ref("");
 const referenceName = ref("");
 const uploading = ref(false);
@@ -108,6 +109,7 @@ function run() {
     conferences: withSources && databases.value.includes("dblp") ? conferences.value : [],
     year_from: withSources ? yearRange.value?.[0] : null,
     year_to: withSources ? yearRange.value?.[1] : null,
+    max_results: maxResults.value,
   });
 }
 </script>
@@ -209,6 +211,11 @@ function run() {
           type="yearrange"
           value-format="YYYY"
         />
+        <div class="result-limit">
+          <span>每个来源最多展示</span>
+          <el-input-number v-model="maxResults" :max="100" :min="5" :step="5" />
+          <span>篇</span>
+        </div>
       </div>
 
       <div class="research-config__footer">
@@ -297,6 +304,14 @@ function run() {
 
 .research-databases {
   flex: 1 0 100%;
+}
+
+.result-limit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
 .research-config__footer {
