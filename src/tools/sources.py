@@ -38,6 +38,22 @@ ARXIV_CATEGORIES: list[dict[str, str]] = [
     {"code": "q-bio.GN", "name": "基因组学"},
 ]
 
+# 可用检索数据库。会议论文通过 DBLP 的公开接口检索。
+RETRIEVAL_DATABASES: list[dict[str, str]] = [
+    {"id": "dblp", "name": "DBLP", "description": "计算机领域会议与期刊"},
+    {"id": "pubmed", "name": "PubMed", "description": "医学与生命科学文献"},
+    {"id": "arxiv", "name": "arXiv", "description": "开放预印本"},
+    {"id": "local", "name": "院内知识库", "description": "本地向量文献库"},
+]
+
+# 顶级人工智能会议，venue 为 DBLP 返回的标准会议缩写。
+COMPUTER_SCIENCE_CONFERENCES: list[dict[str, str]] = [
+    {"id": "CVPR", "name": "CVPR", "description": "计算机视觉与模式识别"},
+    {"id": "AAAI", "name": "AAAI", "description": "人工智能协会年会"},
+    {"id": "ICML", "name": "ICML", "description": "机器学习国际会议"},
+    {"id": "ICLR", "name": "ICLR", "description": "学习表征国际会议"},
+]
+
 
 def list_pubmed_journals() -> list[dict[str, str]]:
     """返回预置 PubMed 期刊清单。
@@ -55,3 +71,13 @@ def list_arxiv_categories() -> list[dict[str, str]]:
         分类代码与说明列表。
     """
     return list(ARXIV_CATEGORIES)
+
+
+def list_retrieval_databases() -> list[dict[str, str]]:
+    """返回可用检索数据库清单。"""
+    return list(RETRIEVAL_DATABASES)
+
+
+def list_computer_science_conferences() -> list[dict[str, str]]:
+    """返回可通过 DBLP 检索的会议清单。"""
+    return list(COMPUTER_SCIENCE_CONFERENCES)

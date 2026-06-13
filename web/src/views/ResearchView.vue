@@ -32,6 +32,9 @@ const runMode = ref("full");
 const selectedAgents = ref(["retrieval", "review", "method", "experiment"]);
 const journals = ref([]);
 const arxivCategories = ref([]);
+const databases = ref(["dblp", "pubmed", "arxiv"]);
+const conferences = ref(["CVPR", "AAAI", "ICML", "ICLR"]);
+const yearRange = ref(["2023", "2026"]);
 const reference = ref("");
 const referenceName = ref("");
 const uploading = ref(false);
@@ -101,6 +104,10 @@ function run() {
     reference: reference.value,
     journals: withSources ? journals.value : [],
     arxiv_categories: withSources ? arxivCategories.value : [],
+    databases: withSources ? databases.value : [],
+    conferences: withSources && databases.value.includes("dblp") ? conferences.value : [],
+    year_from: withSources ? yearRange.value?.[0] : null,
+    year_to: withSources ? yearRange.value?.[1] : null,
   });
 }
 </script>
@@ -165,20 +172,43 @@ function run() {
 
       <!-- 检索来源 -->
       <div v-if="runMode === 'full' || selectedAgents.includes('retrieval')" class="research-config__sources">
+        <el-checkbox-group v-model="databases" class="research-databases">
+          <el-checkbox-button v-for="item in workspace.sources.databases" :key="item.id" :value="item.id">
+            {{ item.name }}
+          </el-checkbox-button>
+        </el-checkbox-group>
         <el-select
+          v-if="databases.includes('dblp')"
+          v-model="conferences"
+          clearable collapse-tags collapse-tags-tooltip filterable multiple
+          placeholder="选择 DBLP 会议，留空则检索 DBLP 全库"
+        >
+          <el-option v-for="item in workspace.sources.conferences" :key="item.id" :label="`${item.name} · ${item.description}`" :value="item.id" />
+        </el-select>
+        <el-select
+          v-if="databases.includes('pubmed')"
           v-model="journals"
           allow-create clearable collapse-tags collapse-tags-tooltip default-first-option filterable multiple
-          placeholder="限定期刊（PubMed，可自定义）"
+          placeholder="限定 PubMed 医学期刊，留空则检索全库"
         >
           <el-option v-for="item in workspace.sources.journals" :key="item.term" :label="item.name" :value="item.term" />
         </el-select>
         <el-select
+          v-if="databases.includes('arxiv')"
           v-model="arxivCategories"
           allow-create clearable collapse-tags collapse-tags-tooltip default-first-option filterable multiple
           placeholder="限定 arXiv 学科分类（可自定义）"
         >
           <el-option v-for="item in workspace.sources.arxiv_categories" :key="item.code" :label="`${item.code} · ${item.name}`" :value="item.code" />
         </el-select>
+        <el-date-picker
+          v-model="yearRange"
+          end-placeholder="结束年份"
+          format="YYYY"
+          start-placeholder="开始年份"
+          type="yearrange"
+          value-format="YYYY"
+        />
       </div>
 
       <div class="research-config__footer">
@@ -263,6 +293,10 @@ function run() {
 .research-config__sources .el-select {
   flex: 1 1 240px;
   min-width: 240px;
+}
+
+.research-databases {
+  flex: 1 0 100%;
 }
 
 .research-config__footer {

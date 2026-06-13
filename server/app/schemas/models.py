@@ -60,6 +60,10 @@ class TaskCreateRequest(BaseModel):
     model_strategy: str = "auto"
     journals: list[str] = Field(default_factory=list)
     arxiv_categories: list[str] = Field(default_factory=list)
+    databases: list[str] = Field(default_factory=lambda: ["dblp", "pubmed", "arxiv", "local"])
+    conferences: list[str] = Field(default_factory=list)
+    year_from: int | None = Field(default=None, ge=1900, le=2100)
+    year_to: int | None = Field(default=None, ge=1900, le=2100)
     # 自选 agent 子集（按顺序执行）；为空时按 mode 走预置计划。
     agents: list[str] = Field(default_factory=list)
     # 上传文件解析出的参考上下文，注入每个 agent。
@@ -87,6 +91,8 @@ class RetrievalSources(BaseModel):
 
     journals: list[dict[str, str]]
     arxiv_categories: list[dict[str, str]]
+    databases: list[dict[str, str]]
+    conferences: list[dict[str, str]]
 
 
 class TaskEvent(BaseModel):
@@ -108,6 +114,10 @@ class TaskRecord(BaseModel):
     model_strategy: str
     journals: list[str] = Field(default_factory=list)
     arxiv_categories: list[str] = Field(default_factory=list)
+    databases: list[str] = Field(default_factory=lambda: ["dblp", "pubmed", "arxiv", "local"])
+    conferences: list[str] = Field(default_factory=list)
+    year_from: int | None = None
+    year_to: int | None = None
     agents: list[str] = Field(default_factory=list)
     has_reference: bool = False
     reference: str = ""

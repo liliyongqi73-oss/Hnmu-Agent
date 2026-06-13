@@ -9,9 +9,9 @@ from queue import Empty, Queue
 from threading import Thread
 
 from ..rag import vectorstore
-from ..tools.literature import search_arxiv, search_pubmed
+from ..tools.literature import search_arxiv, search_dblp, search_pubmed
 
-SOURCE_TIMEOUT_SECONDS = 12
+SOURCE_TIMEOUT_SECONDS = 90
 
 
 def _safe_call(source: str, call, fallback):
@@ -51,6 +51,10 @@ def retrieve(
     k: int = 5,
     journals: list[str] | None = None,
     categories: list[str] | None = None,
+    databases: list[str] | None = None,
+    conferences: list[str] | None = None,
+    year_from: int | None = None,
+    year_to: int | None = None,
 ) -> dict:
     """围绕 topic 做多源检索。
 
@@ -63,10 +67,30 @@ def retrieve(
     Returns:
         {"external": [...], "local": [...]}  外部文献 + 院内库命中。
     """
+    selected = set(databases or ["dblp", "pubmed", "arxiv", "local"])
     external: list[dict] = []
-    external += _safe_call("PubMed", lambda: search_pubmed(topic, k=k, journals=journals), [])
-    external += _safe_call("arXiv", lambda: search_arxiv(topic, k=k, categories=categories), [])
-    local = _safe_call("院内库", lambda: vectorstore.query(topic, k=k), [])
+    if "dblp" in selected or conferences:
+        external += _safe_call(
+            "DBLP",
+            lambda: search_dblp(topic, k=k, conferences=conferences, year_from=year_from, year_to=year_to),
+            [],
+        )
+    if "pubmed" in selected:
+        external += _safe_call("PubMed", lambda: search_pubmed(topic, k=k, journals=journals), [])
+    if "arxiv" in selected:
+        external += _safe_call("arXiv", lambda: search_arxiv(topic, k=k, categories=categories), [])
+    local = _safe_call("院内库", lambda: vectorstore.query(topic, k=k), []) if "local" in selected else []
+    if year_from or year_to:
+        external = [
+            item
+            for item in external
+            if item.get("error")
+            or not item.get("year")
+            or (
+                (not year_from or int(item["year"]) >= year_from)
+                and (not year_to or int(item["year"]) <= year_to)
+            )
+        ]
 
     return {"external": external, "local": local}
 

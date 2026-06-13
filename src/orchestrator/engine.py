@@ -128,6 +128,10 @@ def _run_retrieval_step(
         topic,
         journals=filters.get("journals") or None,
         categories=filters.get("categories") or None,
+        databases=filters.get("databases") or None,
+        conferences=filters.get("conferences") or None,
+        year_from=filters.get("year_from"),
+        year_to=filters.get("year_to"),
     )
     summary = _retrieval_summary(filters, retrieved)
     emit(step.stage, "检索 Agent", "completed", summary)
@@ -163,6 +167,12 @@ def _retrieval_summary(filters: dict, retrieved: dict) -> str:
         parts.append("期刊 " + "、".join(filters["journals"]))
     if filters.get("categories"):
         parts.append("arXiv 分类 " + "、".join(filters["categories"]))
+    if filters.get("databases"):
+        parts.append("数据库 " + "、".join(filters["databases"]))
+    if filters.get("conferences"):
+        parts.append("会议 " + "、".join(filters["conferences"]))
+    if filters.get("year_from") or filters.get("year_to"):
+        parts.append(f"年份 {filters.get('year_from') or '不限'}-{filters.get('year_to') or '不限'}")
     scope = "；限定来源：" + "；".join(parts) if parts else ""
     if hit_count == 0:
         reason = "；".join(errors) if errors else "检索词或来源限制下无命中"

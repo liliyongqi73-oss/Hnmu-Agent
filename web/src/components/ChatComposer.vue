@@ -8,7 +8,7 @@ const props = defineProps({
   },
   sources: {
     type: Object,
-    default: () => ({ journals: [], arxiv_categories: [] }),
+    default: () => ({ journals: [], arxiv_categories: [], databases: [], conferences: [] }),
   },
 });
 const emit = defineEmits(["submit"]);
@@ -16,6 +16,8 @@ const topic = ref("");
 const mode = ref("research");
 const journals = ref([]);
 const arxivCategories = ref([]);
+const databases = ref(["dblp", "pubmed", "arxiv"]);
+const conferences = ref(["CVPR", "AAAI", "ICML", "ICLR"]);
 
 // 仅科研协作、文献精读与完整论文 pipeline 会触发文献检索，教学备课无需选择来源。
 const showSources = computed(() => ["research", "literature", "paper"].includes(mode.value));
@@ -35,6 +37,8 @@ function submit() {
     mode: mode.value,
     journals: showSources.value ? journals.value : [],
     arxiv_categories: showSources.value ? arxivCategories.value : [],
+    databases: showSources.value ? databases.value : [],
+    conferences: showSources.value && databases.value.includes("dblp") ? conferences.value : [],
   });
 }
 
@@ -63,7 +67,21 @@ defineExpose({ submitQuick });
       @keydown.ctrl.enter.prevent="submit"
     />
     <div v-if="showSources" class="composer__sources">
+      <el-checkbox-group v-model="databases" class="composer__databases">
+        <el-checkbox-button v-for="item in sources.databases" :key="item.id" :value="item.id">
+          {{ item.name }}
+        </el-checkbox-button>
+      </el-checkbox-group>
       <el-select
+        v-if="databases.includes('dblp')"
+        v-model="conferences"
+        clearable collapse-tags collapse-tags-tooltip filterable multiple
+        placeholder="选择 DBLP 会议"
+      >
+        <el-option v-for="item in sources.conferences" :key="item.id" :label="item.name" :value="item.id" />
+      </el-select>
+      <el-select
+        v-if="databases.includes('pubmed')"
         v-model="journals"
         allow-create
         clearable
@@ -82,6 +100,7 @@ defineExpose({ submitQuick });
         />
       </el-select>
       <el-select
+        v-if="databases.includes('arxiv')"
         v-model="arxivCategories"
         allow-create
         clearable
@@ -129,5 +148,9 @@ defineExpose({ submitQuick });
 .composer__sources .el-select {
   flex: 1 1 240px;
   min-width: 240px;
+}
+
+.composer__databases {
+  flex: 1 0 100%;
 }
 </style>

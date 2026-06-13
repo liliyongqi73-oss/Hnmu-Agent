@@ -35,7 +35,9 @@ def _now() -> str:
 def _build_plan(record) -> Plan:
     """根据任务记录恢复执行计划。"""
     if record.agents or record.mode == "custom":
-        with_retrieval = "retrieval" in record.agents or bool(record.journals or record.arxiv_categories)
+        with_retrieval = "retrieval" in record.agents or bool(
+            record.journals or record.arxiv_categories or record.conferences
+        )
         return build_custom_plan(record.agents, with_retrieval=with_retrieval)
     return get_plan(record.mode)
 
@@ -292,7 +294,14 @@ def _run_current_step(task_id: str) -> None:
             record.topic,
             stored_results,
             lambda stage, agent, status, summary: _event(task_id, stage, agent, status, summary),
-            retrieval_filters={"journals": record.journals, "categories": record.arxiv_categories},
+            retrieval_filters={
+                "journals": record.journals,
+                "categories": record.arxiv_categories,
+                "databases": record.databases,
+                "conferences": record.conferences,
+                "year_from": record.year_from,
+                "year_to": record.year_to,
+            },
             on_stream=on_stream,
             reference=record.reference,
         )

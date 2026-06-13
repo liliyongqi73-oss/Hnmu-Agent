@@ -52,7 +52,9 @@ function sourceUrl(item) {
       <div class="literature-item__meta">
         <el-tag effect="plain" size="small">{{ item.source }}</el-tag>
         <span v-if="item.venue">{{ item.venue }}</span>
+        <span v-if="item.year">{{ item.year }}</span>
         <span v-if="item.pmid">PMID: {{ item.pmid }}</span>
+        <span v-if="item.doi">DOI: {{ item.doi }}</span>
         <span v-if="item.id">{{ item.id }}</span>
       </div>
       <a v-if="sourceUrl(item)" :href="sourceUrl(item)" rel="noopener noreferrer" target="_blank">

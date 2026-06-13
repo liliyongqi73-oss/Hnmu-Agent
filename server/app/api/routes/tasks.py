@@ -8,7 +8,12 @@ from uuid import uuid4
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
-from src.tools.sources import list_arxiv_categories, list_pubmed_journals
+from src.tools.sources import (
+    list_arxiv_categories,
+    list_computer_science_conferences,
+    list_pubmed_journals,
+    list_retrieval_databases,
+)
 
 from ...core.config import UPLOAD_DIR
 from ...runtime import task_store, task_stream
@@ -66,6 +71,8 @@ def retrieval_sources() -> RetrievalSources:
     return RetrievalSources(
         journals=list_pubmed_journals(),
         arxiv_categories=list_arxiv_categories(),
+        databases=list_retrieval_databases(),
+        conferences=list_computer_science_conferences(),
     )
 
 

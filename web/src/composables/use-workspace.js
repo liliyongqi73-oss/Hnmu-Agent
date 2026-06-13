@@ -12,7 +12,7 @@ import { applyTaskAction, createTask, fetchModels, fetchSources, fetchTask, fetc
 export function useWorkspace() {
   const overview = reactive({ navigation: [], agents: [], quick_prompts: [] });
   const models = ref([]);
-  const sources = reactive({ journals: [], arxiv_categories: [] });
+  const sources = reactive({ journals: [], arxiv_categories: [], databases: [], conferences: [] });
   const tasks = ref([]);
   const activeTask = ref(null);
   const selectedModel = ref("auto");

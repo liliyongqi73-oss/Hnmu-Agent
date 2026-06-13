@@ -18,7 +18,7 @@ defineProps({
   },
   sources: {
     type: Object,
-    default: () => ({ journals: [], arxiv_categories: [] }),
+    default: () => ({ journals: [], arxiv_categories: [], databases: [], conferences: [] }),
   },
 });
 
