@@ -4,6 +4,7 @@ import HistoryView from "../views/HistoryView.vue";
 import HomeView from "../views/HomeView.vue";
 import ModelSettingsView from "../views/ModelSettingsView.vue";
 import PlaceholderView from "../views/PlaceholderView.vue";
+import ResearchView from "../views/ResearchView.vue";
 import RunsView from "../views/RunsView.vue";
 import UserSettingsView from "../views/UserSettingsView.vue";
 import ModelSwitcher from "../components/ModelSwitcher.vue";
@@ -77,12 +78,20 @@ defineEmits(["logout"]);
           :agents="workspace.overview.agents"
           :loading="workspace.loading.value"
           :quick-prompts="workspace.overview.quick_prompts"
+          :sources="workspace.sources"
           @submit="workspace.submit"
         />
         <RunsView
           v-else-if="workspace.activeNav.value === 'runs'"
           :active-task="workspace.activeTask.value"
+          :loading="workspace.loading.value"
+          :streaming="workspace.streaming.value"
           :tasks="workspace.tasks.value"
+          @action="workspace.actOnTask"
+        />
+        <ResearchView
+          v-else-if="workspace.activeNav.value === 'research'"
+          :workspace="workspace"
         />
         <HistoryView
           v-else-if="workspace.activeNav.value === 'history'"

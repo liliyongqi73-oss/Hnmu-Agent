@@ -56,8 +56,37 @@ class TaskCreateRequest(BaseModel):
     """创建科研或教学任务的请求。"""
 
     topic: str = Field(min_length=2, max_length=2000)
-    mode: Literal["research", "teaching", "literature"] = "research"
+    mode: Literal["research", "teaching", "literature", "paper", "custom"] = "research"
     model_strategy: str = "auto"
+    journals: list[str] = Field(default_factory=list)
+    arxiv_categories: list[str] = Field(default_factory=list)
+    # 自选 agent 子集（按顺序执行）；为空时按 mode 走预置计划。
+    agents: list[str] = Field(default_factory=list)
+    # 上传文件解析出的参考上下文，注入每个 agent。
+    reference: str = Field(default="", max_length=200000)
+
+
+class TaskActionRequest(BaseModel):
+    """流程确认点操作请求。"""
+
+    action: Literal["continue", "pause", "resume", "retry", "abort"]
+    note: str = Field(default="", max_length=2000)
+
+
+class UploadResult(BaseModel):
+    """参考文件上传解析结果。"""
+
+    filename: str
+    chars: int
+    preview: str
+    text: str
+
+
+class RetrievalSources(BaseModel):
+    """检索来源预置清单。"""
+
+    journals: list[dict[str, str]]
+    arxiv_categories: list[dict[str, str]]
 
 
 class TaskEvent(BaseModel):
@@ -67,6 +96,7 @@ class TaskEvent(BaseModel):
     agent: str
     status: Literal["pending", "running", "completed", "failed"]
     summary: str = ""
+    output: str = ""
 
 
 class TaskRecord(BaseModel):
@@ -76,8 +106,27 @@ class TaskRecord(BaseModel):
     topic: str
     mode: str
     model_strategy: str
-    status: Literal["queued", "running", "completed", "failed"]
+    journals: list[str] = Field(default_factory=list)
+    arxiv_categories: list[str] = Field(default_factory=list)
+    agents: list[str] = Field(default_factory=list)
+    has_reference: bool = False
+    reference: str = ""
+    status: Literal[
+        "queued",
+        "running",
+        "awaiting_confirmation",
+        "paused",
+        "completed",
+        "failed",
+        "aborted",
+    ]
     events: list[TaskEvent] = Field(default_factory=list)
+    pipeline_steps: list[dict] = Field(default_factory=list)
+    step_results: dict[str, dict] = Field(default_factory=dict)
+    current_step: int = 0
+    checkpoint: dict = Field(default_factory=dict)
+    decisions: list[dict] = Field(default_factory=list)
+    material_passport: dict = Field(default_factory=dict)
     result: dict = Field(default_factory=dict)
     error: str = ""
     created_at: str

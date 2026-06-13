@@ -1,30 +1,72 @@
-"""检索智能体：合并 PubMed/arXiv 外部检索与本地 RAG 结果，去重整理。"""
+"""检索智能体：合并 PubMed/arXiv 外部检索与本地 RAG 结果，去重整理。
+
+支持按期刊名（PubMed）与学科分类（arXiv）限定来源，
+不指定时退化为全库检索。
+"""
 from __future__ import annotations
+
+from queue import Empty, Queue
+from threading import Thread
 
 from ..rag import vectorstore
 from ..tools.literature import search_arxiv, search_pubmed
 
+SOURCE_TIMEOUT_SECONDS = 12
 
-def retrieve(topic: str, k: int = 5) -> dict:
+
+def _safe_call(source: str, call, fallback):
+    """限时执行单个检索来源，超时或异常时返回降级结果。
+
+    Args:
+        source: 来源展示名称。
+        call: 无参数检索函数。
+        fallback: 超时或失败时返回的值。
+
+    Returns:
+        来源结果，外部来源失败时附带错误说明。
+
+    Notes:
+        使用守护线程隔离不可控的网络请求与首次 embedding 下载，避免阻塞全流程。
+    """
+    result_queue: Queue = Queue(maxsize=1)
+
+    def execute() -> None:
+        try:
+            result_queue.put(("ok", call()))
+        except Exception as error:  # noqa: BLE001
+            result_queue.put(("error", str(error)))
+
+    Thread(target=execute, daemon=True).start()
+    try:
+        status, value = result_queue.get(timeout=SOURCE_TIMEOUT_SECONDS)
+    except Empty:
+        return fallback if source == "院内库" else [{"source": source, "error": "检索超时，已降级"}]
+    if status == "error":
+        return fallback if source == "院内库" else [{"source": source, "error": value}]
+    return value
+
+
+def retrieve(
+    topic: str,
+    k: int = 5,
+    journals: list[str] | None = None,
+    categories: list[str] | None = None,
+) -> dict:
     """围绕 topic 做多源检索。
+
+    Args:
+        topic: 检索主题。
+        k: 每个来源的返回条数上限。
+        journals: 限定的 PubMed 期刊名/缩写列表，为空则不限。
+        categories: 限定的 arXiv 分类代码列表，为空则不限。
 
     Returns:
         {"external": [...], "local": [...]}  外部文献 + 院内库命中。
     """
     external: list[dict] = []
-    try:
-        external += search_pubmed(topic, k=k)
-    except Exception as e:  # noqa: BLE001  网络/接口异常不阻断流程
-        external.append({"source": "PubMed", "error": str(e)})
-    try:
-        external += search_arxiv(topic, k=k)
-    except Exception as e:  # noqa: BLE001
-        external.append({"source": "arXiv", "error": str(e)})
-
-    try:
-        local = vectorstore.query(topic, k=k)
-    except Exception:  # noqa: BLE001  本地库可能尚未建立
-        local = []
+    external += _safe_call("PubMed", lambda: search_pubmed(topic, k=k, journals=journals), [])
+    external += _safe_call("arXiv", lambda: search_arxiv(topic, k=k, categories=categories), [])
+    local = _safe_call("院内库", lambda: vectorstore.query(topic, k=k), [])
 
     return {"external": external, "local": local}
 
@@ -35,7 +77,8 @@ def format_context(retrieved: dict) -> str:
     for r in retrieved["external"]:
         if "error" in r:
             continue
-        lines.append(f"- [{r['source']}] {r.get('title','')}\n  {r.get('abstract','')[:300]}")
+        venue = f"《{r['venue']}》 " if r.get("venue") else ""
+        lines.append(f"- [{r['source']}] {venue}{r.get('title','')}\n  {r.get('abstract','')[:300]}")
     lines.append("\n## 院内文献库")
     for r in retrieved["local"]:
         meta = r.get("meta", {})

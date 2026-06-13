@@ -13,6 +13,7 @@ def get_workspace_overview() -> WorkspaceOverview:
     return WorkspaceOverview(
         navigation=[
             {"id": "home", "label": "主页", "description": "科研与教学协作", "icon": "HomeFilled"},
+            {"id": "research", "label": "科研", "description": "自选 Agent、全流程与文件参考", "icon": "Cpu"},
             {"id": "new", "label": "新会话", "description": "开始新的上下文", "icon": "CirclePlus"},
             {"id": "history", "label": "历史", "description": "会话与任务记录", "icon": "Clock"},
             {"id": "agents", "label": "Agents", "description": "团队与任务分工", "icon": "Connection"},

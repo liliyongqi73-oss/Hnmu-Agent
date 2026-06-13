@@ -16,6 +16,10 @@ defineProps({
     type: Array,
     default: () => [],
   },
+  sources: {
+    type: Object,
+    default: () => ({ journals: [], arxiv_categories: [] }),
+  },
 });
 
 const emit = defineEmits(["submit"]);
@@ -36,7 +40,7 @@ const runQuickPrompt = (prompt) => composer.value?.submitQuick(prompt);
       <p class="eyebrow">HNMU RESEARCH & TEACHING AGENT</p>
       <h1>嗨，有什么科研与教学任务需要协作？</h1>
       <p>领导 Agent 会规划任务、调度专业 Agent，并审核每一项最终交付。</p>
-      <ChatComposer ref="composer" :loading="loading" @submit="emit('submit', $event)" />
+      <ChatComposer ref="composer" :loading="loading" :sources="sources" @submit="emit('submit', $event)" />
     </section>
 
     <section class="quick-grid">

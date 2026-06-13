@@ -7,6 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 WEB_DIST_DIR = PROJECT_ROOT / "web" / "dist"
 WORKSPACE_DIR = PROJECT_ROOT / "workspace"
 TASK_RUNTIME_DIR = WORKSPACE_DIR / "runtime"
+UPLOAD_DIR = WORKSPACE_DIR / "uploads"
 MODEL_CONFIG_PATH = WORKSPACE_DIR / "config" / "models.json"
 
 

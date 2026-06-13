@@ -1,20 +1,14 @@
-"""领导智能体：审核各执行智能体产出，并在未达标时给出修订稿。"""
+"""领导智能体：审核各执行智能体产出，并在未达标时给出修订稿。
+
+提示词与用户模板外置在 workspace/skills/leader/SKILL.md，
+本模块保留结构化解析逻辑。
+"""
 from __future__ import annotations
 
 import re
 
 from ..llm_router import get_llm, invoke_text
-
-_SYS = """你是科研与教学多智能体团队的领导 Agent，负责质量验收。
-请检查执行 Agent 的产出是否准确、完整、可执行、符合学术与教学规范。
-
-必须严格按以下格式输出：
-【审核结论】达标 或 需修订
-【质量评分】0-100 的整数
-【审核意见】指出亮点、缺口、风险和改进要求
-【最终交付】若达标，保留并适度润色原产出；若需修订，直接给出完整修订稿
-
-不得捏造文献、数据、伦理审批或实验结果。对证据不足的内容明确标注待核验。"""
+from ..skills.loader import load_skill
 
 
 def review_task(task_name: str, topic: str, output: str, criteria: str = "") -> dict:
@@ -32,14 +26,17 @@ def review_task(task_name: str, topic: str, output: str, criteria: str = "") -> 
     Notes:
         当模型未严格遵循格式时，保守地保留完整审核文本作为最终交付。
     """
-    llm = get_llm(task="leader", temperature=0.1)
-    message = (
-        f"任务名称：{task_name}\n"
-        f"主题：{topic}\n"
-        f"补充验收标准：{criteria or '无'}\n\n"
-        f"执行 Agent 产出：\n{output}"
+    skill = load_skill("leader")
+    llm = get_llm(task=skill.task, temperature=0.1)
+    message = skill.render_user(
+        {
+            "task_name": task_name,
+            "topic": topic,
+            "criteria": criteria or "无",
+            "output": output,
+        }
     )
-    report = invoke_text(llm, [("system", _SYS), ("user", message)])
+    report = invoke_text(llm, [("system", skill.system_prompt), ("user", message)])
     return _parse_report(report, output)
 
 

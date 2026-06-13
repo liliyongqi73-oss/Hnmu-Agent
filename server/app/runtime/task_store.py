@@ -53,8 +53,8 @@ def _load_persisted_tasks() -> None:
         try:
             record = TaskRecord.model_validate_json(path.read_text(encoding="utf-8"))
             if record.status in {"queued", "running"}:
-                record.status = "failed"
-                record.error = "服务重启导致任务中断，请重新提交。"
+                record.status = "paused"
+                record.error = "服务重启导致当前阶段中断，可从流程确认点继续。"
                 record.updated_at = _now()
                 _persist(record)
             _TASKS[record.id] = record
@@ -76,6 +76,11 @@ def create_task(request: TaskCreateRequest) -> TaskRecord:
         topic=request.topic,
         mode=request.mode,
         model_strategy=request.model_strategy,
+        journals=request.journals,
+        arxiv_categories=request.arxiv_categories,
+        agents=request.agents,
+        has_reference=bool(request.reference),
+        reference=request.reference,
         status="queued",
         created_at=_now(),
         updated_at=_now(),
@@ -131,6 +136,24 @@ def update_task(task_id: str, **changes) -> None:
         _persist(record)
 
 
+def update_step_result(task_id: str, step_id: str, fields: dict) -> None:
+    """保存单个流程阶段结果。
+
+    Args:
+        task_id: 任务编号。
+        step_id: 阶段标识。
+        fields: 阶段输出字段。
+
+    Returns:
+        None。
+    """
+    with _LOCK:
+        record = _TASKS[task_id]
+        record.step_results[step_id] = fields
+        record.updated_at = _now()
+        _persist(record)
+
+
 def append_event(task_id: str, event: TaskEvent) -> None:
     """追加任务阶段事件，终态事件会替换对应的运行事件。
 
@@ -159,6 +182,32 @@ def append_event(task_id: str, event: TaskEvent) -> None:
             record.events[event_index] = event
         else:
             record.events.append(event)
+        record.updated_at = _now()
+        _persist(record)
+
+
+def set_event_output(task_id: str, stage: str, output: str) -> None:
+    """为某阶段最近的完成事件补充产出正文。
+
+    Args:
+        task_id: 任务编号。
+        stage: 阶段名称。
+        output: 该阶段的定稿产出。
+
+    Returns:
+        None。
+
+    Notes:
+        供流式定稿时持久化每个 Agent 的完整产出，保证刷新与历史回看可展开查看。
+    """
+    with _LOCK:
+        record = _TASKS.get(task_id)
+        if not record:
+            return
+        for event in reversed(record.events):
+            if event.stage == stage and event.status == "completed":
+                event.output = output
+                break
         record.updated_at = _now()
         _persist(record)
 
