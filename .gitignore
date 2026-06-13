@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.edge-*/
+.files/
+*.log
+*-preview.png
+web/node_modules/
+web/dist/
+workspace/runtime/*.json
