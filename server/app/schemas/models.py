@@ -13,8 +13,25 @@ class ModelOption(BaseModel):
     name: str
     description: str
     provider: str
+    model_name: str = ""
+    base_url: str = ""
     available: bool = True
     sensitive_local: bool = True
+    is_local: bool = False
+    builtin: bool = False
+    has_api_key: bool = False
+
+
+class ModelConfigRequest(BaseModel):
+    """创建或编辑自定义模型配置的请求。"""
+
+    name: str = Field(min_length=2, max_length=80)
+    description: str = Field(default="", max_length=240)
+    provider: str = Field(min_length=2, max_length=40)
+    model_name: str = Field(min_length=1, max_length=120)
+    base_url: str = Field(min_length=8, max_length=500)
+    api_key: str = Field(default="", max_length=500)
+    is_local: bool = False
 
 
 class AgentProfile(BaseModel):

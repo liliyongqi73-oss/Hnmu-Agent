@@ -9,3 +9,5 @@ __pycache__/
 web/node_modules/
 web/dist/
 workspace/runtime/*.json
+workspace/config/models.json
+data/

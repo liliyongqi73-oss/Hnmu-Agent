@@ -45,6 +45,22 @@ export function useWorkspace() {
   }
 
   /**
+   * 功能：重新加载模型配置，并处理已删除的当前选项。
+   * 参数：deletedModelId - 可选的已删除模型编号。
+   * 返回值：Promise<void>。
+   */
+  async function refreshModels(deletedModelId = "") {
+    try {
+      models.value = await fetchModels();
+      if (deletedModelId === selectedModel.value || !selectedModelInfo.value?.available) {
+        selectedModel.value = "auto";
+      }
+    } catch (error) {
+      ElMessage.error(error.response?.data?.detail || "模型配置刷新失败");
+    }
+  }
+
+  /**
    * 功能：创建任务并开始轮询。
    * 参数：payload - 用户输入的任务数据。
    * 返回值：Promise<void>。
@@ -110,6 +126,7 @@ export function useWorkspace() {
     loading,
     models,
     overview,
+    refreshModels,
     selectedModel,
     selectedModelInfo,
     submit,

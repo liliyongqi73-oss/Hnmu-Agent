@@ -8,11 +8,13 @@ from src.llm_router import (
     MODEL_STRATEGY_AUTO,
     MODEL_STRATEGY_DEEPSEEK,
     MODEL_STRATEGY_LOCAL,
+    set_model_config,
     set_model_strategy,
 )
 
 from ..runtime import task_store
 from ..schemas.models import TaskCreateRequest, TaskEvent
+from .model_service import get_model_runtime
 
 STRATEGY_MAP = {
     "auto": MODEL_STRATEGY_AUTO,
@@ -68,7 +70,12 @@ def _run_task(task_id: str) -> None:
     if not record:
         return
     try:
-        set_model_strategy(STRATEGY_MAP.get(record.model_strategy, MODEL_STRATEGY_AUTO))
+        set_model_strategy(STRATEGY_MAP.get(record.model_strategy, record.model_strategy))
+        set_model_config(
+            get_model_runtime(record.model_strategy)
+            if record.model_strategy not in STRATEGY_MAP
+            else None
+        )
         task_store.update_task(task_id, status="running")
         if record.mode == "teaching":
             result = _run_teaching(task_id, record.topic)

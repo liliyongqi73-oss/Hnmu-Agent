@@ -25,6 +25,7 @@ _MODEL_STRATEGY: ContextVar[str] = ContextVar(
     "model_strategy",
     default=MODEL_STRATEGY_AUTO,
 )
+_MODEL_CONFIG: ContextVar[dict | None] = ContextVar("model_config", default=None)
 
 
 def set_model_strategy(strategy: str) -> str:
@@ -39,9 +40,21 @@ def set_model_strategy(strategy: str) -> str:
     Notes:
         使用 ContextVar 隔离并发会话，不修改全局配置或环境变量。
     """
-    selected = strategy if strategy in MODEL_STRATEGIES else MODEL_STRATEGY_AUTO
+    selected = strategy or MODEL_STRATEGY_AUTO
     _MODEL_STRATEGY.set(selected)
     return selected
+
+
+def set_model_config(config: dict | None) -> None:
+    """设置当前任务使用的自定义模型配置。
+
+    Args:
+        config: 模型运行时配置，内置策略或不存在时传入 None。
+
+    Returns:
+        None。
+    """
+    _MODEL_CONFIG.set(config)
 
 
 def get_model_strategy() -> str:
@@ -61,6 +74,15 @@ def get_llm(task: str = "default", temperature: float = 0.3) -> ChatOpenAI:
         temperature: 采样温度。
     """
     strategy = get_model_strategy()
+    model_config = _MODEL_CONFIG.get()
+    if model_config and (model_config.get("is_local") or task not in SENSITIVE_TASKS):
+        return ChatOpenAI(
+            model=model_config["model_name"],
+            base_url=model_config["base_url"],
+            api_key=model_config.get("api_key") or "local",
+            temperature=temperature,
+            max_tokens=4096,
+        )
     use_local = (
         strategy == MODEL_STRATEGY_LOCAL
         or task in SENSITIVE_TASKS

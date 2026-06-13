@@ -7,6 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 WEB_DIST_DIR = PROJECT_ROOT / "web" / "dist"
 WORKSPACE_DIR = PROJECT_ROOT / "workspace"
 TASK_RUNTIME_DIR = WORKSPACE_DIR / "runtime"
+MODEL_CONFIG_PATH = WORKSPACE_DIR / "config" / "models.json"
 
 
 def ensure_workspace_dirs() -> None:
@@ -21,6 +22,7 @@ def ensure_workspace_dirs() -> None:
         WORKSPACE_DIR / "memory",
         WORKSPACE_DIR / "skills",
         WORKSPACE_DIR / "team",
+        WORKSPACE_DIR / "config",
         TASK_RUNTIME_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)

@@ -110,6 +110,7 @@ input {
 
 .sidebar-nav__item:hover,
 .sidebar-nav__item--active,
+.sidebar-settings--active,
 .sidebar-settings:hover {
   border-color: #dbe5ff;
   background: #f2f6ff;
@@ -674,4 +675,66 @@ input {
   display: grid;
   min-height: 70vh;
   place-items: center;
+}
+
+.model-settings-heading {
+  align-items: center;
+}
+
+.model-settings-heading h1 {
+  margin-bottom: 8px;
+}
+
+.model-settings-heading > div > p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.model-admin-card {
+  border-radius: 14px;
+}
+
+.model-admin-name {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.model-admin-name__icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 9px;
+  background: #edf2ff;
+  color: #4167cf;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.model-admin-name strong,
+.model-admin-name small {
+  display: block;
+}
+
+.model-admin-name strong {
+  font-size: 12px;
+}
+
+.model-admin-name small {
+  max-width: 360px;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }

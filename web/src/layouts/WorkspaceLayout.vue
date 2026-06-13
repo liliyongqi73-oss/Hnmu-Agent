@@ -2,6 +2,7 @@
 import AgentsView from "../views/AgentsView.vue";
 import HistoryView from "../views/HistoryView.vue";
 import HomeView from "../views/HomeView.vue";
+import ModelSettingsView from "../views/ModelSettingsView.vue";
 import PlaceholderView from "../views/PlaceholderView.vue";
 import RunsView from "../views/RunsView.vue";
 import ModelSwitcher from "../components/ModelSwitcher.vue";
@@ -39,7 +40,12 @@ defineProps({
         :selected-model="workspace.selectedModelInfo.value"
       />
 
-      <button class="sidebar-settings" type="button">
+      <button
+        class="sidebar-settings"
+        :class="{ 'sidebar-settings--active': workspace.activeNav.value === 'model-settings' }"
+        type="button"
+        @click="workspace.activeNav.value = 'model-settings'"
+      >
         <el-icon><Setting /></el-icon>
         <span><strong>设置</strong><small>模型、接口与环境</small></span>
       </button>
@@ -66,6 +72,11 @@ defineProps({
           @open-task="workspace.activeTask.value = $event; workspace.activeNav.value = 'runs'"
         />
         <AgentsView v-else-if="workspace.activeNav.value === 'agents'" :agents="workspace.overview.agents" />
+        <ModelSettingsView
+          v-else-if="workspace.activeNav.value === 'model-settings'"
+          :models="workspace.models.value"
+          @refresh="workspace.refreshModels"
+        />
         <PlaceholderView v-else :module-id="workspace.activeNav.value" />
       </main>
     </section>

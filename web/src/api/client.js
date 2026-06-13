@@ -22,6 +22,27 @@ export const fetchWorkspaceOverview = () => client.get("/workspace/overview").th
 export const fetchModels = () => client.get("/models").then(({ data }) => data);
 
 /**
+ * 功能：创建自定义模型配置。
+ * 参数：payload - 模型名称、接口地址、模型标识与密钥。
+ * 返回值：新模型配置 Promise。
+ */
+export const createModel = (payload) => client.post("/models", payload).then(({ data }) => data);
+
+/**
+ * 功能：更新自定义模型配置。
+ * 参数：modelId - 模型配置编号；payload - 最新模型配置。
+ * 返回值：更新后的模型配置 Promise。
+ */
+export const updateModel = (modelId, payload) => client.put(`/models/${modelId}`, payload).then(({ data }) => data);
+
+/**
+ * 功能：删除自定义模型配置。
+ * 参数：modelId - 模型配置编号。
+ * 返回值：删除请求 Promise。
+ */
+export const deleteModel = (modelId) => client.delete(`/models/${modelId}`);
+
+/**
  * 功能：创建后台 Agent 任务。
  * 参数：payload - 任务主题、模式和模型策略。
  * 返回值：新任务 Promise。
