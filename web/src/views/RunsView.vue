@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from "vue";
 
+import LiteratureResults from "../components/LiteratureResults.vue";
 import ThinkingPanel from "../components/ThinkingPanel.vue";
 
 const props = defineProps({
@@ -61,6 +62,9 @@ const persistedStages = computed(() => {
 
 // 统一的阶段展示数据源：优先实时流，否则用持久化事件。
 const displayStages = computed(() => (hasStreaming.value ? props.streaming.stages : persistedStages.value));
+
+// 持久化检索结果：刷新或历史任务回看时仍可展示真实文献列表。
+const persistedSources = computed(() => props.activeTask?.step_results?.retrieve?.sources || []);
 </script>
 
 <template>
@@ -216,6 +220,10 @@ const displayStages = computed(() => (hasStreaming.value ? props.streaming.stage
             <strong>定稿产出</strong>
             <pre>{{ entry.output }}</pre>
           </div>
+          <LiteratureResults
+            v-if="entry.done && entry.stage.includes('检索')"
+            :sources="entry.sources?.length ? entry.sources : persistedSources"
+          />
         </article>
       </section>
 

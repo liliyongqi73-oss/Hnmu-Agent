@@ -129,7 +129,7 @@ def _run_retrieval_step(
         journals=filters.get("journals") or None,
         categories=filters.get("categories") or None,
     )
-    summary = _retrieval_summary(filters)
+    summary = _retrieval_summary(filters, retrieved)
     emit(step.stage, "检索 Agent", "completed", summary)
     on_stream(
         {
@@ -145,23 +145,30 @@ def _run_retrieval_step(
     return StepResult(fields={"context": retrieval.format_context(retrieved), "sources": retrieved["external"]})
 
 
-def _retrieval_summary(filters: dict) -> str:
+def _retrieval_summary(filters: dict, retrieved: dict) -> str:
     """生成检索完成摘要，标注限定的来源。
 
     Args:
         filters: 检索过滤条件。
+        retrieved: 多来源检索结果。
 
     Returns:
         阶段完成摘要。
     """
+    external = retrieved.get("external", [])
+    hit_count = len([item for item in external if not item.get("error")]) + len(retrieved.get("local", []))
+    errors = [f"{item.get('source', '未知来源')}：{item['error']}" for item in external if item.get("error")]
     parts: list[str] = []
     if filters.get("journals"):
         parts.append("期刊 " + "、".join(filters["journals"]))
     if filters.get("categories"):
         parts.append("arXiv 分类 " + "、".join(filters["categories"]))
-    if not parts:
-        return "多源证据检索完成"
-    return "限定来源检索完成：" + "；".join(parts)
+    scope = "；限定来源：" + "；".join(parts) if parts else ""
+    if hit_count == 0:
+        reason = "；".join(errors) if errors else "检索词或来源限制下无命中"
+        return f"未获得可用文献：{reason}{scope}"
+    warning = f"；部分来源异常：{'；'.join(errors)}" if errors else ""
+    return f"检索到 {hit_count} 篇可用文献{scope}{warning}"
 
 
 def _generate(

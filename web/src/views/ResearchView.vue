@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import { ElMessage } from "element-plus";
 
 import { uploadReference } from "../api/client";
+import LiteratureResults from "../components/LiteratureResults.vue";
 
 const props = defineProps({
   workspace: {
@@ -233,6 +234,7 @@ function run() {
           <strong>定稿产出</strong>
           <pre>{{ entry.output }}</pre>
         </div>
+        <LiteratureResults v-if="entry.done && entry.stage.includes('检索')" :sources="entry.sources" />
       </article>
     </section>
   </div>

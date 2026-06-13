@@ -73,7 +73,7 @@ export function useWorkspace() {
   function ensureStage(stage, agent) {
     let entry = streaming.value.stages.find((item) => item.stage === stage);
     if (!entry) {
-      entry = { stage, agent, rounds: [], output: "", passed: null, score: null, done: false };
+      entry = { stage, agent, rounds: [], output: "", sources: [], passed: null, score: null, done: false };
       streaming.value.stages.push(entry);
     }
     return entry;
@@ -121,6 +121,7 @@ export function useWorkspace() {
       case "stage_done": {
         const entry = ensureStage(message.stage, message.agent);
         entry.output = message.output;
+        entry.sources = message.sources || entry.sources;
         entry.passed = message.passed;
         entry.score = message.score ?? null;
         entry.done = true;
