@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from ...core.database import get_db
 from ...models.user import User
 from ...schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserInfo
-from ...services.auth_service import create_access_token, create_user, verify_password
+from ...services.auth_service import create_access_token, create_user, token_expire_seconds, verify_password
 from ..dependencies import get_current_user
 
 router = APIRouter()
@@ -31,7 +31,11 @@ def register(request: RegisterRequest, database: Session = Depends(get_db)) -> A
     except IntegrityError as error:
         database.rollback()
         raise HTTPException(status_code=409, detail="用户名已存在") from error
-    return AuthResponse(access_token=create_access_token(user), user=user)
+    return AuthResponse(
+        access_token=create_access_token(user),
+        expires_in=token_expire_seconds(),
+        user=user,
+    )
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -48,7 +52,11 @@ def login(request: LoginRequest, database: Session = Depends(get_db)) -> AuthRes
     user = database.scalar(select(User).where(User.username == request.username))
     if not user or not user.is_active or not verify_password(request.password, user.password_hash):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
-    return AuthResponse(access_token=create_access_token(user), user=user)
+    return AuthResponse(
+        access_token=create_access_token(user),
+        expires_in=token_expire_seconds(),
+        user=user,
+    )
 
 
 @router.get("/me", response_model=UserInfo)

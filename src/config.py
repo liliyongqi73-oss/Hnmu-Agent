@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     database_url: str = "mysql+pymysql://root:change-me@127.0.0.1:3306/hnmu_agent?charset=utf8mb4"
     auth_secret_key: str = "change-this-secret-in-production"
     auth_token_expire_minutes: int = 1440
+    bootstrap_admin_username: str = ""
+    bootstrap_admin_password: str = ""
+    bootstrap_admin_display_name: str = "系统管理员"
 
     # 全本地模式：未配置云端 key 时设 true，所有任务走本地 Ollama（便于离线 demo）
     all_local: bool = False

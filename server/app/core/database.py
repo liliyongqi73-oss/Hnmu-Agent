@@ -43,6 +43,7 @@ def initialize_database() -> None:
         None。
     """
     from ..models import user  # noqa: F401  导入模型以注册表结构
+    from ..services.auth_service import ensure_bootstrap_admin
 
     try:
         Base.metadata.create_all(bind=engine)
@@ -62,6 +63,8 @@ def initialize_database() -> None:
                 )
             )
         Base.metadata.create_all(bind=engine)
+    with SessionLocal() as database:
+        ensure_bootstrap_admin(database)
 
 
 def database_health() -> tuple[bool, str]:

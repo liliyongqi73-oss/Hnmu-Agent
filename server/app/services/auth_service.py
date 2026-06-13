@@ -73,6 +73,15 @@ def create_access_token(user: User) -> str:
     )
 
 
+def token_expire_seconds() -> int:
+    """返回访问令牌有效秒数。
+
+    Returns:
+        Token 有效秒数。
+    """
+    return settings.auth_token_expire_minutes * 60
+
+
 def decode_access_token(token: str) -> int | None:
     """解析 JWT 并返回用户编号。
 
@@ -105,6 +114,38 @@ def create_user(database: Session, request: RegisterRequest) -> User:
         display_name=request.display_name,
         password_hash=hash_password(request.password),
         role="admin" if user_count == 0 else "user",
+    )
+    database.add(user)
+    database.commit()
+    database.refresh(user)
+    return user
+
+
+def ensure_bootstrap_admin(database: Session) -> User | None:
+    """在用户表为空时创建环境变量配置的默认管理员。
+
+    Args:
+        database: 数据库会话。
+
+    Returns:
+        新建管理员；无需创建时返回 None。
+
+    Notes:
+        已存在任何用户时不会创建或覆盖账号密码。
+    """
+    username = settings.bootstrap_admin_username.strip()
+    password = settings.bootstrap_admin_password
+    if not username or len(password) < 8:
+        return None
+    user_count = database.scalar(select(func.count(User.id))) or 0
+    if user_count:
+        return None
+    user = User(
+        username=username,
+        display_name=settings.bootstrap_admin_display_name.strip() or "系统管理员",
+        password_hash=hash_password(password),
+        role="admin",
+        is_active=True,
     )
     database.add(user)
     database.commit()

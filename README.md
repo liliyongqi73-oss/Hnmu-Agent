@@ -66,9 +66,13 @@ FLUSH PRIVILEGES;
 ```dotenv
 DATABASE_URL=mysql+pymysql://hnmu_agent:replace-with-strong-password@127.0.0.1:3306/hnmu_agent?charset=utf8mb4
 AUTH_SECRET_KEY=replace-with-a-long-random-secret
+AUTH_TOKEN_EXPIRE_MINUTES=1440
+BOOTSTRAP_ADMIN_USERNAME=admin
+BOOTSTRAP_ADMIN_PASSWORD=replace-with-a-strong-password
+BOOTSTRAP_ADMIN_DISPLAY_NAME=系统管理员
 ```
 
-服务启动时会自动创建用户表。未配置有效 MySQL 凭据时，健康检查返回 `degraded`，注册和登录接口返回 `503`。
+服务启动时会自动创建用户表，并在用户表为空时创建默认管理员。登录成功后返回带过期时间的 JWT，前端后续请求统一携带 `Authorization: Bearer <token>`。未配置有效 MySQL 凭据时，健康检查返回 `degraded`，注册和登录接口返回 `503`。
 
 ## 目录结构
 

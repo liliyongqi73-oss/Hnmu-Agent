@@ -25,6 +25,10 @@ const submit = async () => {
       ? await login({ username: form.username, password: form.password })
       : await register({ ...form });
     window.localStorage.setItem("hnmu_access_token", response.access_token);
+    window.localStorage.setItem(
+      "hnmu_token_expires_at",
+      String(Date.now() + response.expires_in * 1000),
+    );
     emit("authenticated", response.user);
     ElMessage.success(mode.value === "login" ? "登录成功" : "注册成功");
   } catch (error) {

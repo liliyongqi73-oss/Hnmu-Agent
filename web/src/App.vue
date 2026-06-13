@@ -27,6 +27,7 @@ const handleAuthenticated = async (authenticatedUser) => {
  */
 const logout = () => {
   window.localStorage.removeItem("hnmu_access_token");
+  window.localStorage.removeItem("hnmu_token_expires_at");
   user.value = null;
 };
 
@@ -37,6 +38,11 @@ const logout = () => {
  */
 const restoreSession = async () => {
   try {
+    const expiresAt = Number(window.localStorage.getItem("hnmu_token_expires_at") || 0);
+    if (expiresAt && expiresAt <= Date.now()) {
+      logout();
+      return;
+    }
     if (window.localStorage.getItem("hnmu_access_token")) {
       await handleAuthenticated(await fetchCurrentUser());
     }
