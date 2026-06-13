@@ -1,10 +1,11 @@
 """模型策略接口。"""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from ...schemas.models import ModelConfigRequest, ModelOption
 from ...services.model_service import create_model, delete_model, list_model_options, update_model
+from ..dependencies import require_admin
 
 router = APIRouter()
 
@@ -19,7 +20,7 @@ def models() -> list[ModelOption]:
     return list_model_options()
 
 
-@router.post("", response_model=ModelOption)
+@router.post("", response_model=ModelOption, dependencies=[Depends(require_admin)])
 def create(request: ModelConfigRequest) -> ModelOption:
     """创建自定义模型配置。
 
@@ -32,7 +33,7 @@ def create(request: ModelConfigRequest) -> ModelOption:
     return create_model(request)
 
 
-@router.put("/{model_id}", response_model=ModelOption)
+@router.put("/{model_id}", response_model=ModelOption, dependencies=[Depends(require_admin)])
 def update(model_id: str, request: ModelConfigRequest) -> ModelOption:
     """更新自定义模型配置。
 
@@ -49,7 +50,7 @@ def update(model_id: str, request: ModelConfigRequest) -> ModelOption:
     return model
 
 
-@router.delete("/{model_id}", status_code=204)
+@router.delete("/{model_id}", status_code=204, dependencies=[Depends(require_admin)])
 def delete(model_id: str) -> None:
     """删除自定义模型配置。
 

@@ -48,6 +48,28 @@ Set-Location ..
 
 访问 `http://127.0.0.1:8000`。开发前端时可在 `web/` 下运行 `npm run dev`。
 
+## 登录、权限与 MySQL
+
+系统用户保存在本地 MySQL，首个注册账号自动成为管理员，后续注册账号默认为普通用户。管理员可管理模型配置、用户角色和账号状态。
+
+先使用有建库权限的 MySQL 账号创建专用账号：
+
+```sql
+CREATE DATABASE IF NOT EXISTS hnmu_agent CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'hnmu_agent'@'localhost' IDENTIFIED BY 'replace-with-strong-password';
+GRANT ALL PRIVILEGES ON hnmu_agent.* TO 'hnmu_agent'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+然后在 `.env` 配置数据库连接和 JWT 密钥：
+
+```dotenv
+DATABASE_URL=mysql+pymysql://hnmu_agent:replace-with-strong-password@127.0.0.1:3306/hnmu_agent?charset=utf8mb4
+AUTH_SECRET_KEY=replace-with-a-long-random-secret
+```
+
+服务启动时会自动创建用户表。未配置有效 MySQL 凭据时，健康检查返回 `degraded`，注册和登录接口返回 `503`。
+
 ## 目录结构
 
 ```

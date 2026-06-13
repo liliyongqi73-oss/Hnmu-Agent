@@ -738,3 +738,116 @@ input {
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
+
+.auth-shell {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: 1.2fr 0.8fr;
+  background: radial-gradient(circle at 20% 20%, #edf3ff, #f7f8fa 45%, #eef1f6);
+}
+
+.auth-intro {
+  display: flex;
+  max-width: 640px;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 60px;
+}
+
+.auth-brand {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  margin-bottom: 24px;
+  place-items: center;
+  border: 1px solid #d8deea;
+  border-radius: 50%;
+  background: #fff;
+  font-family: Georgia, serif;
+  font-size: 34px;
+  font-style: italic;
+  box-shadow: 0 16px 42px rgba(40, 60, 110, 0.12);
+}
+
+.auth-intro h1 {
+  margin: 0;
+  color: #142038;
+  font-size: 42px;
+  letter-spacing: -0.04em;
+}
+
+.auth-intro > p:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.auth-intro ul {
+  display: grid;
+  gap: 14px;
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auth-intro li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #445169;
+  font-size: 12px;
+}
+
+.auth-card {
+  width: 440px;
+  align-self: center;
+  justify-self: center;
+  padding: 38px;
+  border: 1px solid rgba(218, 224, 235, 0.9);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 24px 70px rgba(40, 55, 90, 0.13);
+}
+
+.auth-card__heading {
+  margin-bottom: 26px;
+}
+
+.auth-card__heading h2 {
+  margin: 0;
+  font-size: 25px;
+}
+
+.auth-card__heading > p:last-child {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.auth-submit {
+  width: 100%;
+}
+
+.auth-switch {
+  width: 100%;
+  margin-top: 22px;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.auth-loading {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.auth-loading .el-icon {
+  animation: thinking-spin 1.2s linear infinite;
+}

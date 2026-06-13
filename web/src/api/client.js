@@ -5,6 +5,62 @@ const client = axios.create({
   timeout: 30000,
 });
 
+client.interceptors.request.use((config) => {
+  const token = window.localStorage.getItem("hnmu_access_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && window.localStorage.getItem("hnmu_access_token")) {
+      window.localStorage.removeItem("hnmu_access_token");
+      window.dispatchEvent(new CustomEvent("auth-expired"));
+    }
+    return Promise.reject(error);
+  },
+);
+
+/**
+ * 功能：登录并获取用户令牌。
+ * 参数：payload - 用户名和密码。
+ * 返回值：认证响应 Promise。
+ */
+export const login = (payload) => client.post("/auth/login", payload).then(({ data }) => data);
+
+/**
+ * 功能：注册并获取用户令牌。
+ * 参数：payload - 用户名、显示名称和密码。
+ * 返回值：认证响应 Promise。
+ */
+export const register = (payload) => client.post("/auth/register", payload).then(({ data }) => data);
+
+/**
+ * 功能：读取当前登录用户。
+ * 参数：无。
+ * 返回值：当前用户 Promise。
+ */
+export const fetchCurrentUser = () => client.get("/auth/me").then(({ data }) => data);
+
+/**
+ * 功能：获取全部用户。
+ * 参数：无。
+ * 返回值：用户列表 Promise。
+ * 注意事项：仅管理员可调用。
+ */
+export const fetchUsers = () => client.get("/users").then(({ data }) => data);
+
+/**
+ * 功能：更新用户角色与启用状态。
+ * 参数：userId - 用户编号；payload - 角色与状态。
+ * 返回值：更新后的用户 Promise。
+ * 注意事项：仅管理员可调用。
+ */
+export const updateUser = (userId, payload) => client.put(`/users/${userId}`, payload).then(({ data }) => data);
+
 /**
  * 功能：获取工作台初始化数据。
  * 参数：无。

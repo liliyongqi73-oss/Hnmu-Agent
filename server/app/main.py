@@ -9,8 +9,14 @@ from fastapi.staticfiles import StaticFiles
 
 from .api.router import api_router
 from .core.config import WEB_DIST_DIR, ensure_workspace_dirs
+from .core.database import initialize_database
 
 ensure_workspace_dirs()
+try:
+    initialize_database()
+except Exception:
+    # 数据库凭据未配置时仍启动静态页面和健康检查，登录接口会返回连接错误。
+    pass
 
 # Windows 某些环境会把 .js 识别为 text/plain，浏览器会拒绝加载 ES Module。
 mimetypes.add_type("application/javascript", ".js")

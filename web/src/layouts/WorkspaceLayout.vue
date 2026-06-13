@@ -5,6 +5,7 @@ import HomeView from "../views/HomeView.vue";
 import ModelSettingsView from "../views/ModelSettingsView.vue";
 import PlaceholderView from "../views/PlaceholderView.vue";
 import RunsView from "../views/RunsView.vue";
+import UserSettingsView from "../views/UserSettingsView.vue";
 import ModelSwitcher from "../components/ModelSwitcher.vue";
 import SidebarNav from "../components/SidebarNav.vue";
 import TopBar from "../components/TopBar.vue";
@@ -14,7 +15,13 @@ defineProps({
     type: Object,
     required: true,
   },
+  user: {
+    type: Object,
+    required: true,
+  },
 });
+
+defineEmits(["logout"]);
 </script>
 
 <template>
@@ -41,6 +48,7 @@ defineProps({
       />
 
       <button
+        v-if="user.role === 'admin'"
         class="sidebar-settings"
         :class="{ 'sidebar-settings--active': workspace.activeNav.value === 'model-settings' }"
         type="button"
@@ -49,10 +57,20 @@ defineProps({
         <el-icon><Setting /></el-icon>
         <span><strong>设置</strong><small>模型、接口与环境</small></span>
       </button>
+      <button
+        v-if="user.role === 'admin'"
+        class="sidebar-settings"
+        :class="{ 'sidebar-settings--active': workspace.activeNav.value === 'user-settings' }"
+        type="button"
+        @click="workspace.activeNav.value = 'user-settings'"
+      >
+        <el-icon><UserFilled /></el-icon>
+        <span><strong>用户与权限</strong><small>账号、角色与状态</small></span>
+      </button>
     </aside>
 
     <section class="workspace-main">
-      <TopBar :model="workspace.selectedModelInfo.value" />
+      <TopBar :model="workspace.selectedModelInfo.value" :user="user" @logout="$emit('logout')" />
       <main class="workspace-content">
         <HomeView
           v-if="workspace.activeNav.value === 'home' || workspace.activeNav.value === 'new'"
@@ -73,9 +91,13 @@ defineProps({
         />
         <AgentsView v-else-if="workspace.activeNav.value === 'agents'" :agents="workspace.overview.agents" />
         <ModelSettingsView
-          v-else-if="workspace.activeNav.value === 'model-settings'"
+          v-else-if="workspace.activeNav.value === 'model-settings' && user.role === 'admin'"
           :models="workspace.models.value"
           @refresh="workspace.refreshModels"
+        />
+        <UserSettingsView
+          v-else-if="workspace.activeNav.value === 'user-settings' && user.role === 'admin'"
+          :current-user="user"
         />
         <PlaceholderView v-else :module-id="workspace.activeNav.value" />
       </main>

@@ -4,7 +4,13 @@ defineProps({
     type: Object,
     default: null,
   },
+  user: {
+    type: Object,
+    required: true,
+  },
 });
+
+defineEmits(["logout"]);
 </script>
 
 <template>
@@ -17,7 +23,18 @@ defineProps({
       <el-tag type="success" effect="light">已连接</el-tag>
       <span class="top-bar__model">{{ model?.provider || "模型加载中" }}</span>
       <el-button text :icon="QuestionFilled">说明</el-button>
-      <el-button text :icon="Setting" />
+      <el-dropdown>
+        <el-button text>
+          {{ user.display_name }}
+          <el-icon><ArrowDown /></el-icon>
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item disabled>{{ user.role === "admin" ? "管理员" : "普通用户" }}</el-dropdown-item>
+            <el-dropdown-item divided @click="$emit('logout')">退出登录</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </div>
   </header>
 </template>

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from ...core.database import database_health
+
 router = APIRouter()
 
 
@@ -13,4 +15,9 @@ def health() -> dict:
     Returns:
         服务状态信息。
     """
-    return {"status": "ok", "service": "HNMU-Agent API"}
+    database_ok, database_message = database_health()
+    return {
+        "status": "ok" if database_ok else "degraded",
+        "service": "HNMU-Agent API",
+        "database": database_message,
+    }
