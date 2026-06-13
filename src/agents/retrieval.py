@@ -9,7 +9,7 @@ from queue import Empty, Queue
 from threading import Thread
 
 from ..rag import vectorstore
-from ..tools.literature import search_arxiv, search_dblp, search_pubmed
+from ..tools.literature import enrich_literature, search_arxiv, search_dblp, search_pubmed
 
 SOURCE_TIMEOUT_SECONDS = 90
 
@@ -99,6 +99,7 @@ def retrieve(
                 and (not year_to or int(item["year"]) <= year_to)
             )
         ]
+    external = enrich_literature(external)
 
     return {"external": external, "local": local}
 

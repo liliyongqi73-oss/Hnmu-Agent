@@ -14,6 +14,8 @@ HTTP_TIMEOUT_SECONDS = 15.0
 DBLP_API_URL = "https://dblp.org/search/publ/api"
 DBLP_MIRROR_API_URL = "https://dblp.uni-trier.de/search/publ/api"
 PUBMED_API_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+SEMANTIC_SCHOLAR_BATCH_URL = "https://api.semanticscholar.org/graph/v1/paper/batch"
+GITHUB_REPOSITORY_SEARCH_URL = "https://api.github.com/search/repositories"
 
 # 常见中文研究主题到国际数据库检索词的规范化映射。
 QUERY_TRANSLATIONS: dict[str, str] = {
@@ -57,6 +59,112 @@ def _is_relevant_title(title: str, query: str) -> bool:
         return True
     folded_title = title.casefold()
     return any(term in folded_title for term in terms)
+
+
+def _paper_identifier(item: dict) -> str:
+    """生成 Semantic Scholar 可识别的论文标识。"""
+    if item.get("doi"):
+        return f"DOI:{item['doi']}"
+    if item.get("pmid"):
+        return f"PMID:{item['pmid']}"
+    if item.get("source") == "arXiv" and item.get("id"):
+        return f"ARXIV:{str(item['id']).split('v', 1)[0]}"
+    return ""
+
+
+def _analysis_from_abstract(abstract: str, tldr: str) -> tuple[str, str]:
+    """从摘要中提取解决问题与待解决问题，避免无依据生成。"""
+    sentences = [part.strip() for part in re.split(r"(?<=[.!?])\s+", abstract) if part.strip()]
+    problem_markers = ("problem", "challenge", "suffer", "limitation", "however", "while", "despite")
+    remaining_markers = ("future", "remain", "limitation", "further", "still", "however")
+    solved = next((sentence for sentence in sentences if any(marker in sentence.casefold() for marker in problem_markers)), "")
+    remaining = next((sentence for sentence in reversed(sentences) if any(marker in sentence.casefold() for marker in remaining_markers)), "")
+    solved = solved or tldr or (sentences[0] if sentences else "摘要未提供，需阅读全文核验。")
+    remaining = remaining or "摘要未明确说明待解决问题，需阅读全文与实验局限部分核验。"
+    return solved, remaining
+
+
+def _discover_github_repository(title: str) -> str:
+    """查找描述中明确匹配论文标题的 GitHub 仓库。"""
+    normalized_title = re.sub(r"[^a-z0-9 ]+", " ", title.casefold())
+    meaningful = [word for word in normalized_title.split() if len(word) >= 4][:8]
+    if not meaningful:
+        return ""
+    query = " ".join(meaningful[:5]) + " in:name,description,readme"
+    headers = {"User-Agent": "HNMU-Agent/2.0 academic-research-client", "Accept": "application/vnd.github+json"}
+    try:
+        with httpx.Client(timeout=HTTP_TIMEOUT_SECONDS, follow_redirects=True, headers=headers) as client:
+            response = client.get(GITHUB_REPOSITORY_SEARCH_URL, params={"q": query, "per_page": 3})
+        response.raise_for_status()
+    except (httpx.HTTPError, ValueError):
+        return ""
+    for repository in response.json().get("items", []):
+        candidate = f"{repository.get('name', '')} {repository.get('description', '')}".casefold()
+        matched = len([word for word in meaningful if word in candidate])
+        if "official implementation" in candidate or matched >= min(3, len(meaningful)):
+            return str(repository.get("html_url") or "")
+    return ""
+
+
+def enrich_literature(items: list[dict]) -> list[dict]:
+    """批量补全文献摘要、TLDR、问题分析与代码搜索入口。"""
+    enriched = [dict(item) for item in items]
+    indexed = [(index, _paper_identifier(item)) for index, item in enumerate(enriched) if _paper_identifier(item)]
+    headers = {"User-Agent": "HNMU-Agent/2.0 academic-research-client"}
+    fields = "title,abstract,tldr,externalIds,openAccessPdf"
+    for start in range(0, len(indexed), 100):
+        batch = indexed[start:start + 100]
+        records = _fetch_semantic_scholar_batch([identifier for _, identifier in batch], fields, headers)
+        for (index, _), record in zip(batch, records):
+            if not record:
+                continue
+            abstract = str(record.get("abstract") or enriched[index].get("abstract") or "")
+            tldr_data = record.get("tldr") or {}
+            tldr = str(tldr_data.get("text") or "")
+            enriched[index]["abstract"] = abstract
+            enriched[index]["tldr"] = tldr
+            pdf = record.get("openAccessPdf") or {}
+            enriched[index]["pdf_url"] = str(pdf.get("url") or "")
+            external_ids = record.get("externalIds") or {}
+            if external_ids.get("ArXiv"):
+                enriched[index]["arxiv_id"] = str(external_ids["ArXiv"])
+
+    for item in enriched:
+        abstract = str(item.get("abstract") or "")
+        solved, remaining = _analysis_from_abstract(abstract, str(item.get("tldr") or ""))
+        item["solved_problem"] = solved
+        item["remaining_problem"] = remaining
+        explicit_github = re.search(r"https?://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", abstract)
+        item["github_url"] = explicit_github.group(0).rstrip(".,)") if explicit_github else ""
+        item["github_search_url"] = str(
+            httpx.URL("https://github.com/search", params={"q": item.get("title", ""), "type": "repositories"})
+        )
+    # GitHub 未认证搜索有严格频率限制，仅核验最相关的前 10 篇，其余保留搜索入口。
+    for item in enriched[:10]:
+        if not item.get("error") and not item.get("github_url"):
+            item["github_url"] = _discover_github_repository(str(item.get("title") or ""))
+    return enriched
+
+
+def _fetch_semantic_scholar_batch(ids: list[str], fields: str, headers: dict[str, str]) -> list[dict | None]:
+    """调用 Semantic Scholar 批量接口，瞬时限流时自动重试。"""
+    for attempt in range(3):
+        try:
+            with httpx.Client(timeout=30, follow_redirects=True, headers=headers) as client:
+                response = client.post(
+                    SEMANTIC_SCHOLAR_BATCH_URL,
+                    params={"fields": fields},
+                    json={"ids": ids},
+                )
+            if response.status_code == 429 and attempt < 2:
+                time.sleep(2 * (attempt + 1))
+                continue
+            response.raise_for_status()
+            return response.json()
+        except (httpx.HTTPError, ValueError):
+            if attempt < 2:
+                time.sleep(2 * (attempt + 1))
+    return [None] * len(ids)
 
 
 def _build_pubmed_term(query: str, journals: list[str] | None) -> str:

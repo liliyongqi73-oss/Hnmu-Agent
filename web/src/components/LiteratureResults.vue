@@ -89,9 +89,32 @@ watch(() => props.sources, () => {
     <el-table v-if="literature.length" :data="pagedLiterature" border stripe table-layout="fixed">
       <el-table-column type="expand">
         <template #default="{ row }">
-          <div class="literature-abstract">
-            <strong>摘要</strong>
-            <p>{{ row.abstract || "该来源未提供摘要。" }}</p>
+          <div class="literature-detail">
+            <section>
+              <strong>文章摘要</strong>
+              <p>{{ row.abstract || "该来源未提供摘要。" }}</p>
+            </section>
+            <section>
+              <strong>解决的问题</strong>
+              <p>{{ row.solved_problem || "暂无结构化分析。" }}</p>
+            </section>
+            <section>
+              <strong>仍待解决的问题</strong>
+              <p>{{ row.remaining_problem || "摘要未明确说明，需阅读全文核验。" }}</p>
+            </section>
+            <section>
+              <strong>代码仓库</strong>
+              <p>
+                <el-link v-if="row.github_url" :href="row.github_url" target="_blank" type="success">已发现 GitHub 仓库</el-link>
+                <template v-else>
+                  未发现明确的官方仓库；
+                  <el-link :href="row.github_search_url" target="_blank" type="primary">在 GitHub 搜索</el-link>
+                </template>
+                <template v-if="row.pdf_url">
+                  · <el-link :href="row.pdf_url" target="_blank" type="primary">开放 PDF</el-link>
+                </template>
+              </p>
+            </section>
           </div>
         </template>
       </el-table-column>
@@ -116,6 +139,12 @@ watch(() => props.sources, () => {
         <template #default="{ row }">
           <el-link v-if="sourceUrl(row)" :href="sourceUrl(row)" target="_blank" type="primary">查看</el-link>
           <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="GitHub" width="120" fixed="right">
+        <template #default="{ row }">
+          <el-link v-if="row.github_url" :href="row.github_url" target="_blank" type="success">代码仓库</el-link>
+          <el-link v-else :href="row.github_search_url" target="_blank" type="info">搜索代码</el-link>
         </template>
       </el-table-column>
     </el-table>
@@ -172,15 +201,31 @@ watch(() => props.sources, () => {
   line-height: 1.5;
 }
 
-.literature-abstract {
+.literature-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
   padding: 4px 48px;
 }
 
-.literature-abstract p {
+.literature-detail section {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--el-fill-color-lighter);
+}
+
+.literature-detail p {
   margin: 8px 0 0;
   color: var(--el-text-color-regular);
   font-size: 13px;
   line-height: 1.65;
+}
+
+@media (max-width: 900px) {
+  .literature-detail {
+    grid-template-columns: 1fr;
+    padding: 4px 12px;
+  }
 }
 
 .literature-pagination {
